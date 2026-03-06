@@ -1,5 +1,5 @@
-import { TransportManager } from './transport/index.ts'
-import type { LogLevel, LogPayload, OrionConfig } from './types.ts'
+import { OfflineQueue } from './queue.js'
+import type { LogLevel, LogPayload, OrionConfig } from './types.js'
 
 /**
  * Logger — l'objet que l'utilisateur manipule au quotidien.
@@ -7,49 +7,41 @@ import type { LogLevel, LogPayload, OrionConfig } from './types.ts'
  * UTILISATION :
  *   const logger = await createLogger()
  *   logger.info('Serveur démarré')
- *   logger.error('Connexion BDD échouée', { host: 'localhost', port: 5432 })
+ *   logger.error('Connexion BDD échouée')
  *   logger.send('warn', 'Rate limit atteint')
  *   logger.send({ level: 'debug', message: 'Request reçue', userId: '123' })
+ * 
+ *   const logger = Orion.createLogger('debug')
+ *   logger.send('Serveur démarré')
  *
- * NIVEAUX :
- *   Seuls les logs dont le niveau est ≥ au niveau configuré sont envoyés.
- *   Ordre : debug < info < warn < error
- *
- * ERREURS D'ENVOI :
- *   Par défaut, les erreurs d'envoi sont silencieuses (un warning sur stderr).
- *   On ne veut pas que le monitoring fasse crasher l'application monitorée.
- *   Ce comportement peut être changé via { throwOnError: true } dans la config.
+ * ENVOI :
+ *   Chaque log est envoyé via un POST HTTP (fetch natif).
+ *   Si l'API est indisponible et que le mode offline est activé,
+ *   les logs sont mis en queue et réenvoyés automatiquement.
  */
-
-const LEVEL_ORDER: Record<LogLevel, number> = {
-  debug: 0,
-  info: 1,
-  warn: 2,
-  error: 3,
-}
-
 export class Logger {
-  private readonly manager: TransportManager
-  private readonly level: LogLevel
-  private send: ((messageOrData: string | Record<string, unknown>, meta?: Record<string, unknown>) => void) | ((levelOrData: LogLevel | Record<string, unknown>, message?: string) => void)
+  private readonly url: string
+  private readonly headers: Record<string, string>
+  private readonly offlineEnabled: boolean
+  private readonly offlineQueue: OfflineQueue | null
+  private readonly defaultLevel: LogLevel | null
 
-  constructor(config: OrionConfig) {
-    this.manager = new TransportManager(config)
-    // Le niveau minimum est stocké dans la config (ex: 'debug', 'info'...)
-    // Par défaut 'debug' = tout passe
-    this.level = (config as any).minLevel ?? 'debug'
-    if ((config as any).level) {
-      this.send = this.sendWithoutLevel
-    } else {
-      this.send = this.sendWithLevel
+  constructor(private readonly config: OrionConfig, defaultLevel?: LogLevel) {
+    this.defaultLevel = defaultLevel ?? null
+    this.url = `http://localhost:3001/api/projects/${config.projectName}/sources/${config.sourceName}/logs/emit`
+
+    this.headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.token}`,
     }
+
+    this.offlineEnabled = config.offline !== false
+    this.offlineQueue = this.offlineEnabled
+      ? new OfflineQueue(config, (payload) => this.httpSend(payload))
+      : null
   }
 
-  // ─── Méthodes de niveau ───────────────────────────────────────────────────────
-
-  debug(message: string, meta?: Record<string, unknown>): void {
-    this.log('debug', message, meta)
-  }
+  // ─── Méthodes par niveau ──────────────────────────────────────────────────────
 
   info(message: string, meta?: Record<string, unknown>): void {
     this.log('info', message, meta)
@@ -63,63 +55,73 @@ export class Logger {
     this.log('error', message, meta)
   }
 
+  debug(message: string, meta?: Record<string, unknown>): void {
+    this.log('debug', message, meta)
+  }
+
+  verbose(message: string, meta?: Record<string, unknown>): void {
+    this.log('verbose', message, meta)
+  }
+
+  trace(message: string, meta?: Record<string, unknown>): void {
+    this.log('trace', message, meta)
+  }
+
   // ─── Méthode send (surcharge) ─────────────────────────────────────────────────
 
   /**
-   * send() accepte deux formes, comme défini dans le cahier des charges :
-   *
-   *   logger.send('debug', 'mon message')
-   *   logger.send({ level: 'error', message: '...', userId: '123' })
-   *
-   * La deuxième forme permet les logs structurés avec des métadonnées arbitraires.
+   * send() accepte plusieurs formes :
+   *   logger.send('mon message')                         // utilise le defaultLevel
+   *   logger.send('debug', 'mon message')                // niveau explicite
+   *   logger.send({ level: 'error', message: '...', userId: '123' })  // structuré
    */
-  private sendWithLevel(levelOrData: LogLevel | Record<string, unknown>, message?: string): void {
-    if (typeof levelOrData === 'string') {
+  send(message: string): void
+  send(level: LogLevel, message: string): void
+  send(data: { level?: LogLevel; message?: string; [key: string]: unknown }): void
+  send(
+    levelOrDataOrMsg: LogLevel | string | { level?: LogLevel; message?: string; [key: string]: unknown },
+    message?: string,
+  ): void {
+    if (typeof levelOrDataOrMsg === 'string' && message !== undefined) {
       // Forme : send('debug', 'message')
-      this.log(levelOrData, message ?? '', undefined)
+      this.log(levelOrDataOrMsg as LogLevel, message)
+    } else if (typeof levelOrDataOrMsg === 'string') {
+      // Forme : send('message') — utilise le defaultLevel
+      this.log(this.defaultLevel ?? 'info', levelOrDataOrMsg)
     } else {
-      // Forme : send({ level: 'error', message: '...', userId: '123' })
-      const { level, message: msg, ...meta } = levelOrData as {
-        level?: LogLevel
-        message?: string
-        [key: string]: unknown
-      }
-      this.log(level ?? 'info', String(msg ?? ''), meta)
+      const { level, message: msg, ...meta } = levelOrDataOrMsg
+      this.log(level ?? 'info', String(msg ?? ''), Object.keys(meta).length > 0 ? meta : undefined)
     }
   }
 
+  // ─── Envoi HTTP direct ────────────────────────────────────────────────────────
+
   /**
-   * send() accepte deux formes, comme défini dans le cahier des charges :
-   *
-   *   logger.send('debug', 'mon message')
-   *   logger.send({ level: 'error', message: '...', userId: '123' })
-   *
-   * La deuxième forme permet les logs structurés avec des métadonnées arbitraires.
+   * Envoie un payload à l'API Orion via fetch.
+   * @throws Si la réponse n'est pas ok (pour que la queue puisse réessayer)
    */
-  private sendWithoutLevel(messageOrData: string | Record<string, unknown>, meta?: Record<string, unknown>): void {
-    if (typeof messageOrData === 'string') {
-      // Forme : send('debug', 'message')
-      this.log(this.level, messageOrData ?? '', undefined)
-    } else {
-      // Forme : send({ level: 'error', message: '...', userId: '123' })
-      const { message: msg, ...meta } = messageOrData as {
-        message?: string
-        [key: string]: unknown
-      }
-      this.log(this.level, String(msg ?? ''), meta)
+  private async httpSend(payload: LogPayload): Promise<void> {
+    const response = await fetch(this.url, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({
+        level: payload.level,
+        message: payload.message,
+      }),
+      signal: AbortSignal.timeout(5000),
+    })
+
+    if (!response.ok) {
+      throw new Error(`[Orion] Échec de l'envoi : ${response.status} ${response.statusText}`)
     }
   }
 
   // ─── Méthode privée centrale ──────────────────────────────────────────────────
 
   /**
-   * log() est la méthode interne qui :
-   * 1. Filtre selon le niveau minimum configuré
-   * 2. Construit le payload
-   * 3. Délègue l'envoi au TransportManager (sans bloquer le thread appelant)
-   *
-   * L'envoi est "fire and forget" : on ne fait pas attendre l'appelant.
-   * Les erreurs sont loguées sur stderr mais ne remontent pas.
+   * Construit le payload et tente l'envoi HTTP.
+   * En cas d'échec, enqueue si le mode offline est actif.
+   * Fire & forget : ne bloque jamais l'appelant.
    */
   private log(level: LogLevel, message: string, meta?: Record<string, unknown>): void {
     const payload: LogPayload = {
@@ -129,28 +131,20 @@ export class Logger {
       ...(meta && Object.keys(meta).length > 0 ? { meta } : {}),
     }
 
-    // Fire & forget avec gestion d'erreur silencieuse
-    this.manager.send(payload).catch((err: Error) => {
-      process.stderr.write(`[Orion] Erreur d'envoi du log : ${err.message}\n`)
+    this.httpSend(payload).catch(() => {
+      if (this.offlineQueue) {
+        this.offlineQueue.enqueue(payload)
+      }
     })
   }
 
-  // ─── Observabilité ────────────────────────────────────────────────────────────
+  // ─── Fermeture propre ─────────────────────────────────────────────────────────
 
   /**
-   * Retourne le transport actif ('http' ou 'ws') et le débit courant.
-   * Utile pour le debug et les tests.
-   */
-  getStatus(): { transport: 'http' | 'ws', rate: number } {
-    return this.manager.getStatus()
-  }
-
-  /**
-   * Ferme proprement les connexions (à appeler en shutdown de l'app).
-   *
+   * Ferme la queue et les timers (à appeler en shutdown de l'app).
    *   process.on('SIGTERM', () => logger.close())
    */
   close(): void {
-    this.manager.close()
+    this.offlineQueue?.close()
   }
 }

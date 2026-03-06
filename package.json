@@ -1,5 +1,5 @@
 {
-  "name": "orion-sdk",
+  "name": "orion",
   "version": "0.1.0",
   "description": "SDK officiel pour envoyer des logs vers Orion Monitoring",
   "type": "module",
@@ -9,6 +9,14 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./middlewares/express": {
+      "import": "./dist/middlewares/express.js",
+      "types": "./dist/middlewares/express.d.ts"
+    },
+    "./middlewares/fastify": {
+      "import": "./dist/middlewares/fastify.js",
+      "types": "./dist/middlewares/fastify.d.ts"
     }
   },
   "scripts": {
@@ -16,12 +24,20 @@
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "ws": "^8.18.0"
+  "peerDependencies": {
+    "express": ">=4.0.0",
+    "fastify": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^20.19.37",
-    "@types/ws": "^8.5.10",
     "typescript": "^5.0.0"
   },
   "engines": {
@@ -34,6 +50,8 @@
   "keywords": [
     "logging",
     "monitoring",
-    "orion"
-  ]
+    "orion",
+    "sdk"
+  ],
+  "license": "MIT"
 }

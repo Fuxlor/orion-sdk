@@ -1,6 +1,6 @@
 // ─── Niveaux de log ───────────────────────────────────────────────────────────
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+export type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'verbose' | 'trace'
 
 // ─── Payload d'un log envoyé à l'API ─────────────────────────────────────────
 
@@ -20,15 +20,32 @@ export interface OrionConfig {
   projectName: string
   /** Nom de la source (ex: "api-backend") */
   sourceName: string
-  /** URL de l'API Orion (défaut: https://api.orion.dev) */
+  /** URL de l'API Orion (défaut: http://localhost:3001/api) */
   apiUrl?: string
-  /** Seuil en logs/sec pour basculer sur WebSocket (défaut: 10) */
-  wsThreshold?: number
+  /** Active la queue offline si l'API est indisponible (défaut: true) */
+  offline?: boolean
+  /** Taille max de la queue offline (défaut: 1000) */
+  maxQueueSize?: number
+  /** Intervalle de retry en ms (défaut: 30000 = 30s) */
+  retryInterval?: number
 }
 
-// ─── Interface d'un transport ─────────────────────────────────────────────────
+// ─── Options pour les middlewares (Express / Fastify) ─────────────────────────
 
-export interface Transport {
-  send(payload: LogPayload): Promise<void>
-  close(): void
+export interface MiddlewareOptions {
+  /** Logger les body de requête */
+  logBody?: boolean
+  /** Logger les headers */
+  logHeaders?: boolean
+  /** Routes à exclure du logging (ex: ['/health']) */
+  exclude?: string[]
+  /** Niveaux de log par catégorie de status HTTP */
+  level?: {
+    /** 2xx (défaut: 'info') */
+    success?: LogLevel
+    /** 4xx (défaut: 'warn') */
+    clientError?: LogLevel
+    /** 5xx (défaut: 'error') */
+    serverError?: LogLevel
+  }
 }
