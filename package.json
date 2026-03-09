@@ -1,7 +1,7 @@
 {
   "name": "@orion-monitoring/sdk",
   "version": "1.0.0",
-  "description": "SDK officiel pour envoyer des logs vers Orion Monitoring",
+  "description": "Official SDK to send logs to Orion Monitoring",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
