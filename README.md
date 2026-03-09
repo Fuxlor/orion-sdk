@@ -14,7 +14,7 @@ npm install @orion-monitoring/sdk
 Créez un fichier `orion.config.ts` à la racine de votre projet (ou utilisez `npx @orion-monitoring/cli`) :
 
 ```typescript
-import { defineConfig } from 'orion'
+import { defineConfig } from '@orion-monitoring/cli'
 
 export default defineConfig({
   token: 'votre-token',
@@ -41,7 +41,7 @@ export default defineConfig({
 ### Logger basique
 
 ```typescript
-import { createLogger } from 'orion'
+import { createLogger } from '@orion-monitoring/sdk'
 
 const logger = createLogger()
 
@@ -56,7 +56,7 @@ logger.trace('Entrée dans la fonction')
 ### Logger avec config explicite
 
 ```typescript
-import { createLogger } from 'orion'
+import { createLogger } from '@orion-monitoring/sdk'
 
 const logger = createLogger({
   token: 'mon-token',
@@ -81,7 +81,7 @@ logger.send({
 ### Logger préconfiguré
 
 ```typescript
-import { createLogger } from 'orion'
+import { createLogger } from '@orion-monitoring/sdk'
 
 logger = createLogger('debug')
 

@@ -1,6 +1,6 @@
 {
-  "name": "orion",
-  "version": "0.1.0",
+  "name": "@orion-monitoring/sdk",
+  "version": "1.0.0",
   "description": "SDK officiel pour envoyer des logs vers Orion Monitoring",
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.37",
-    "typescript": "^5.0.0"
+    "tsx": "^4.0.0",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -53,5 +54,8 @@
     "orion",
     "sdk"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "tsc": "^2.0.4"
+  }
 }
