@@ -6,12 +6,12 @@ Envoie des logs depuis votre application Node.js vers l'API Orion.
 ## Installation
 
 ```bash
-npm install orion
+npm install @orion-monitoring/sdk
 ```
 
 ## Configuration
 
-Créez un fichier `orion.config.ts` à la racine de votre projet (ou utilisez `npx orion-cli init`) :
+Créez un fichier `orion.config.ts` à la racine de votre projet (ou utilisez `npx @orion-monitoring/cli`) :
 
 ```typescript
 import { defineConfig } from 'orion'
@@ -76,6 +76,16 @@ logger.send({
   userId: '123',
   amount: 49.99,
 })
+```
+
+### Logger préconfiguré
+
+```typescript
+import { createLogger } from 'orion'
+
+logger = createLogger('debug')
+
+logger.send('Log de debug')
 ```
 
 ---
