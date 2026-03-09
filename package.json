@@ -9,20 +9,11 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    },
-    "./middlewares/express": {
-      "import": "./dist/middlewares/express.js",
-      "types": "./dist/middlewares/express.d.ts"
-    },
-    "./middlewares/fastify": {
-      "import": "./dist/middlewares/fastify.js",
-      "types": "./dist/middlewares/fastify.d.ts"
     }
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch",
-    "typecheck": "tsc --noEmit"
+    "dev": "tsx src/index.ts"
   },
   "peerDependencies": {
     "express": ">=4.0.0",
@@ -37,9 +28,9 @@
     }
   },
   "devDependencies": {
-    "@types/node": "^20.19.37",
+    "@types/node": "^20.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -54,8 +45,5 @@
     "orion",
     "sdk"
   ],
-  "license": "MIT",
-  "dependencies": {
-    "tsc": "^2.0.4"
-  }
+  "license": "MIT"
 }
