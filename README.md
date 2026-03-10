@@ -25,14 +25,19 @@ export default defineConfig({
 
 ### Options de configuration
 
-| Option          | Type      | Défaut                         | Description                              |
-| --------------- | --------- | ------------------------------ | ---------------------------------------- |
-| `token`         | `string`  | —                              | Token d'authentification (obligatoire)   |
-| `projectName`   | `string`  | —                              | Nom du projet (obligatoire)              |
-| `sourceName`    | `string`  | —                              | Nom de la source (obligatoire)           |
-| `offline`       | `boolean` | `true`                         | Active la queue offline                  |
-| `maxQueueSize`  | `number`  | `1000`                         | Taille max de la queue                   |
-| `retryInterval` | `number`  | `30000`                        | Intervalle de retry en ms                |
+```markdown
+| Option                     | Type      | Défaut  | Description                              |
+| -------------------------- | --------- | ------- | ---------------------------------------- |
+| `token`                    | `string`  | —       | Token d'authentification (obligatoire)   |
+| `projectName`              | `string`  | —       | Nom du projet (obligatoire)              |
+| `sourceName`               | `string`  | —       | Nom de la source (obligatoire)           |
+| `offline`                  | `boolean` | `true`  | Active la queue offline                  |
+| `maxQueueSize`             | `number`  | `1000`  | Taille max de la queue                   |
+| `retryInterval`            | `number`  | `30000` | Intervalle de retry en ms                |
+| `performance`              | `boolean` | `false` | Active le monitoring de performance      |
+| `performanceInterval`      | `number`  | `60000` | Intervalle de collecte de performance    |
+| `performanceCustomMessage` | `string`  | —       | Message personnalisé pour la performance |
+```
 
 ---
 
