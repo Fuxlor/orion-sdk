@@ -8,6 +8,8 @@ const DEFAULTS = {
   offline: true,
   maxQueueSize: 1000,
   retryInterval: 30_000,
+  performance: false,
+  performanceInterval: 60_000,
 } satisfies Partial<OrionConfig>
 
 // ─── defineConfig ─────────────────────────────────────────────────────────────
@@ -76,6 +78,9 @@ function parseConfigFile(filePath: string): Partial<OrionConfig> {
     offline: extractBool('offline'),
     maxQueueSize: extractNum('maxQueueSize'),
     retryInterval: extractNum('retryInterval'),
+    performance: extractBool('performance'),
+    performanceInterval: extractNum('performanceInterval'),
+    performanceCustomMessage: extract('performanceCustomMessage'),
   }
 }
 
@@ -93,12 +98,16 @@ export function loadConfig(): OrionConfig {
   if (!configPath) {
     throw new Error(
       `[Orion] Fichier orion.config.ts introuvable.\n` +
-      `  → Lancez "npx orion-cli init" pour générer la configuration.\n` +
+      `  → Lancez "npx @orion-monitoring/cli" pour générer la configuration.\n` +
       `  → Cherché depuis : ${process.cwd()}`
     )
   }
 
   const fileConfig = parseConfigFile(configPath)
+  if (fileConfig.performanceInterval && fileConfig.performanceInterval < 1000) {
+    console.warn(`[Orion] performanceInterval est trop court, il doit être supérieur à 1000ms.`) 
+    fileConfig.performanceInterval = 1000
+  }
   const config = { ...DEFAULTS, ...fileConfig }
 
   // Validation des champs obligatoires

@@ -1,4 +1,5 @@
 import { OfflineQueue } from './queue.js'
+import { PerformanceLoggingThread } from './performance.js'
 import type { LogLevel, LogPayload, OrionConfig } from './types.js'
 
 /**
@@ -25,6 +26,8 @@ export class Logger {
   private readonly offlineEnabled: boolean
   private readonly offlineQueue: OfflineQueue | null
   private readonly defaultLevel: LogLevel | null
+  private readonly performanceEnabled: boolean
+  private readonly performanceLoggingThread: PerformanceLoggingThread | null
 
   constructor(private readonly config: OrionConfig, defaultLevel?: LogLevel) {
     this.defaultLevel = defaultLevel ?? null
@@ -39,6 +42,8 @@ export class Logger {
     this.offlineQueue = this.offlineEnabled
       ? new OfflineQueue(config, (payload) => this.httpSend(payload))
       : null
+    this.performanceEnabled = config.performance !== false
+    this.performanceLoggingThread = this.performanceEnabled ? new PerformanceLoggingThread(config) : null
   }
 
   // ─── Méthodes par niveau ──────────────────────────────────────────────────────

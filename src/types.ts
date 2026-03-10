@@ -28,6 +28,12 @@ export interface OrionConfig {
   maxQueueSize?: number
   /** Intervalle de retry en ms (défaut: 30000 = 30s) */
   retryInterval?: number
+  /** Active l'envois des stats de performance */
+  performance?: boolean
+  /** Intervalle entre chaque log de perf */
+  performanceInterval?: number
+  /** Message personnalisé pour les logs de perf */
+  performanceCustomMessage?: string
 }
 
 // ─── Options pour les middlewares (Express / Fastify) ─────────────────────────
