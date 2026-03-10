@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import type { OrionConfig } from './types.js'
 
-// ─── Valeurs par défaut ───────────────────────────────────────────────────────
+// ─── Default values ───────────────────────────────────────────────────────────
 
 const DEFAULTS = {
   offline: true,
@@ -17,9 +17,9 @@ const DEFAULTS = {
 // ─── defineConfig ─────────────────────────────────────────────────────────────
 
 /**
- * Helper pour typer orion.config.ts (comme defineConfig de Vite).
+ * Helper to type orion.config.ts (like Vite's defineConfig).
  *
- * Usage dans orion.config.ts :
+ * Usage in orion.config.ts:
  *   import { defineConfig } from 'orion'
  *   export default defineConfig({ token: '...', projectName: '...', sourceName: '...' })
  */
@@ -27,11 +27,11 @@ export function defineConfig(config: OrionConfig): OrionConfig {
   return config
 }
 
-// ─── Recherche du fichier de config ───────────────────────────────────────────
+// ─── Config file lookup ───────────────────────────────────────────────────────
 
 /**
- * Remonte l'arborescence à partir de `startDir` pour trouver orion.config.ts.
- * Même comportement que Vite, ESLint, Prettier.
+ * Walks up the directory tree from `startDir` to find orion.config.ts.
+ * Same behavior as Vite, ESLint, Prettier.
  */
 function findConfigFile(startDir: string): string | null {
   let current = startDir
@@ -49,11 +49,11 @@ function findConfigFile(startDir: string): string | null {
   }
 }
 
-// ─── Parsing naïf du fichier de config ────────────────────────────────────────
+// ─── Naive config file parsing ────────────────────────────────────────────────
 
 /**
- * Extrait les champs depuis le contenu brut du fichier orion.config.ts.
- * Parsing regex pour rester léger (pas de dépendance à ts-node/tsx).
+ * Extracts fields from the raw content of orion.config.ts.
+ * Regex-based parsing to stay lightweight (no ts-node/tsx dependency).
  */
 function parseConfigFile(filePath: string): Partial<OrionConfig> {
   const content = readFileSync(filePath, 'utf-8')
@@ -91,19 +91,19 @@ function parseConfigFile(filePath: string): Partial<OrionConfig> {
 // ─── loadConfig ───────────────────────────────────────────────────────────────
 
 /**
- * Charge la configuration Orion en cherchant orion.config.ts depuis process.cwd()
- * et en remontant l'arborescence.
+ * Loads the Orion configuration by searching for orion.config.ts from process.cwd()
+ * and walking up the directory tree.
  *
- * @throws Si le fichier orion.config.ts est introuvable
+ * @throws If the orion.config.ts file is not found
  */
 export function loadConfig(): OrionConfig {
   const configPath = findConfigFile(process.cwd())
 
   if (!configPath) {
     throw new Error(
-      `[Orion] Fichier orion.config.ts introuvable.\n` +
-      `  → Lancez "npx @orion-monitoring/cli" pour générer la configuration.\n` +
-      `  → Cherché depuis : ${process.cwd()}`
+      `[Orion] orion.config.ts not found.\n` +
+      `  → Run "npx @orion-monitoring/cli" to generate the configuration.\n` +
+      `  → Searched from: ${process.cwd()}`
     )
   }
 
@@ -118,7 +118,7 @@ export function loadConfig(): OrionConfig {
     config.heartbeatInterval = 30000
   }
 
-  // Validation des champs obligatoires
+  // Validate required fields
   const missing: string[] = []
   if (!config.token) missing.push('token')
   if (!config.projectName) missing.push('projectName')
@@ -126,7 +126,7 @@ export function loadConfig(): OrionConfig {
 
   if (missing.length > 0) {
     throw new Error(
-      `[Orion] Configuration incomplète dans ${configPath}, champs manquants : ${missing.join(', ')}.`
+      `[Orion] Incomplete configuration in ${configPath}, missing fields: ${missing.join(', ')}.`
     )
   }
 
@@ -136,13 +136,13 @@ export function loadConfig(): OrionConfig {
 // ─── resolveConfig ────────────────────────────────────────────────────────────
 
 /**
- * Résout la configuration finale en fusionnant :
- * 1. Les valeurs par défaut (DEFAULTS)
- * 2. La config auto-détectée depuis orion.config.ts (si présente)
- * 3. L'override manuel passé par l'utilisateur (priorité maximale)
+ * Resolves the final configuration by merging:
+ * 1. Default values (DEFAULTS)
+ * 2. Auto-detected config from orion.config.ts (if present)
+ * 3. Manual override passed by the user (highest priority)
  *
- * @param override - Config partielle passée directement par l'utilisateur
- * @throws Si token/projectName/sourceName sont manquants après fusion
+ * @param override - Partial config passed directly by the user
+ * @throws If token/projectName/sourceName are missing after merge
  */
 export function resolveConfig(override?: Partial<OrionConfig>): OrionConfig {
   let fileConfig: Partial<OrionConfig> = {}
@@ -155,7 +155,7 @@ export function resolveConfig(override?: Partial<OrionConfig>): OrionConfig {
       try {
         fileConfig = parseConfigFile(configPath)
       } catch (err) {
-        console.warn(`[Orion] Impossible de lire ${configPath} :`, err)
+        console.warn(`[Orion] Could not read ${configPath}:`, err)
       }
     }
   }
@@ -182,8 +182,8 @@ export function resolveConfig(override?: Partial<OrionConfig>): OrionConfig {
 
   if (missing.length > 0) {
     throw new Error(
-      `[Orion] Configuration incomplète, champs manquants : ${missing.join(', ')}.\n` +
-      `  → Lancez "npx orion-cli init" pour générer orion.config.ts, ou passez la config manuellement :\n` +
+      `[Orion] Incomplete configuration, missing fields: ${missing.join(', ')}.\n` +
+      `  → Run "npx orion-cli init" to generate orion.config.ts, or pass the config manually:\n` +
       `  → createLogger({ token: '...', projectName: '...', sourceName: '...' })`
     )
   }

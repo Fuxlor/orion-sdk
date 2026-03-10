@@ -3,9 +3,9 @@ import type { LogLevel, MiddlewareOptions } from '../types.js'
 import { resolveConfig } from '../config.js'
 
 /**
- * Middleware Express pour logger automatiquement les requêtes HTTP.
+ * Express middleware for automatic HTTP request logging.
  *
- * UTILISATION :
+ * USAGE:
  *   import { createOrionMiddleware } from 'orion/middlewares/express'
  *
  *   app.use(await createOrionMiddleware({
@@ -13,10 +13,10 @@ import { resolveConfig } from '../config.js'
  *     level: { success: 'info', clientError: 'warn', serverError: 'error' }
  *   }))
  *
- * Logue automatiquement : "GET /api/users 200 — 23ms"
+ * Automatically logs: "GET /api/users 200 — 23ms"
  */
 
-// Types minimaux pour éviter de dépendre directement d'express
+// Minimal types to avoid a direct dependency on express
 interface ExpressRequest {
   method: string
   originalUrl: string
@@ -34,10 +34,10 @@ type NextFunction = (err?: unknown) => void
 type ExpressMiddleware = (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => void
 
 /**
- * Crée un middleware Express qui logue chaque requête avec durée et status code.
+ * Creates an Express middleware that logs each request with duration and status code.
  */
 export async function createOrionMiddleware(options?: MiddlewareOptions): Promise<ExpressMiddleware> {
-  // Import dynamique du Logger pour éviter les problèmes de dépendances circulaires
+  // Dynamic import of Logger to avoid circular dependency issues
   const { Logger } = await import('../logger.js')
   const { getHeartbeatThread } = await import('../heartbeat.js')
   const config = resolveConfig()
@@ -57,7 +57,7 @@ export async function createOrionMiddleware(options?: MiddlewareOptions): Promis
   return (req: ExpressRequest, res: ExpressResponse, next: NextFunction): void => {
     const path = req.originalUrl || req.url
 
-    // Vérifie si la route est exclue
+    // Check if the route is excluded
     if (exclude.some((pattern) => path.startsWith(pattern))) {
       next()
       return
@@ -71,7 +71,7 @@ export async function createOrionMiddleware(options?: MiddlewareOptions): Promis
       const method = req.method
       const message = `${method} ${path} ${status} — ${duration}ms`
 
-      // Détermine le niveau selon le status code
+      // Determine the log level based on the status code
       let level: LogLevel = levels.success
       if (status >= 500) {
         level = levels.serverError

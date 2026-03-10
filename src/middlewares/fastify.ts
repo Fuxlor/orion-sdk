@@ -3,17 +3,17 @@ import type { LogLevel, MiddlewareOptions } from '../types.js'
 import { resolveConfig } from '../config.js'
 
 /**
- * Plugin Fastify pour logger automatiquement les requêtes HTTP.
+ * Fastify plugin for automatic HTTP request logging.
  *
- * UTILISATION :
+ * USAGE:
  *   import { orionPlugin } from 'orion/middlewares/fastify'
  *
  *   await fastify.register(orionPlugin, { exclude: ['/health'] })
  *
- * Utilise les hooks onRequest / onResponse pour capturer durée + status.
+ * Uses onRequest / onResponse hooks to capture duration + status.
  */
 
-// Types minimaux pour éviter de dépendre directement de fastify
+// Minimal types to avoid a direct dependency on fastify
 interface FastifyRequest {
   method: string
   url: string
@@ -35,7 +35,7 @@ interface FastifyInstance {
 interface FastifyPluginOptions extends MiddlewareOptions {}
 
 /**
- * Plugin Fastify pour le logging automatique des requêtes.
+ * Fastify plugin for automatic request logging.
  */
 export async function orionPlugin(
   fastify: FastifyInstance,
@@ -57,13 +57,13 @@ export async function orionPlugin(
     serverError: options?.level?.serverError ?? 'error',
   }
 
-  // Hook onRequest : enregistre le timestamp de début
+  // onRequest hook: records the start timestamp
   fastify.addHook('onRequest', (request: FastifyRequest, _reply: FastifyReply, done: (err?: Error) => void) => {
     request.orionStartTime = Date.now()
     done()
   })
 
-  // Hook onResponse : logue la requête avec durée et status
+  // onResponse hook: logs the request with duration and status
   fastify.addHook('onResponse', (request: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void) => {
     const path = request.url
 
@@ -103,7 +103,7 @@ export async function orionPlugin(
     done()
   })
 
-  // Hook onError : logue les erreurs non attrapées
+  // onError hook: logs uncaught errors
   fastify.addHook('onError', (request: FastifyRequest, _reply: FastifyReply, error: Error, done: () => void) => {
     const path = request.url
 

@@ -23,14 +23,14 @@ import { resolveConfig } from './config.js'
 import type { OrionConfig, LogLevel } from './types.js'
 
 /**
- * Crée et retourne un Logger prêt à l'emploi.
+ * Creates and returns a ready-to-use Logger.
  *
- * DEUX FAÇONS DE L'APPELER :
+ * TWO WAYS TO CALL IT:
  *
- * 1. Auto-detect (orion.config.ts est trouvé automatiquement)
+ * 1. Auto-detect (orion.config.ts is found automatically)
  *    const logger = createLogger()
  *
- * 2. Config explicite (override total ou partiel)
+ * 2. Explicit config (full or partial override)
  *    const logger = createLogger({ token: '...', projectName: '...', sourceName: '...' })
  */
 export function createLogger(override?: Partial<OrionConfig>): Logger {

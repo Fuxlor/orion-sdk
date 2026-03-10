@@ -52,7 +52,7 @@ export class PerformanceLoggingThread {
         })
 
         if (!response.ok) {
-            throw new Error(`[Orion] Échec de l'envoi : ${response.status} ${response.statusText}`)
+            throw new Error(`[Orion] Send failed: ${response.status} ${response.statusText}`)
         }
     }
 

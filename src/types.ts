@@ -1,61 +1,61 @@
-// ─── Niveaux de log ───────────────────────────────────────────────────────────
+// ─── Log levels ───────────────────────────────────────────────────────────────
 
 export type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'verbose' | 'trace'
 
-// ─── Payload d'un log envoyé à l'API ─────────────────────────────────────────
+// ─── Log payload sent to the API ─────────────────────────────────────────────
 
 export interface LogPayload {
   level: LogLevel
   message: string
   timestamp: string     // ISO 8601
-  meta?: Record<string, unknown>  // données structurées optionnelles
+  meta?: Record<string, unknown>  // optional structured data
 }
 
-// ─── Config Orion (lue depuis orion.config.ts ou passée manuellement) ─────────
+// ─── Orion config (read from orion.config.ts or passed manually) ──────────────
 
 export interface OrionConfig {
-  /** Token du projet, obtenu via orion-cli */
+  /** Project token, obtained via orion-cli */
   token: string
-  /** Nom du projet (ex: "my-app") */
+  /** Project name (e.g. "my-app") */
   projectName: string
-  /** Nom de la source (ex: "api-backend") */
+  /** Source name (e.g. "api-backend") */
   sourceName: string
-  /** URL de l'API Orion (défaut: http://localhost:3001/api) */
+  /** Orion API URL (default: http://localhost:3001/api) */
   apiUrl?: string
-  /** Active la queue offline si l'API est indisponible (défaut: true) */
+  /** Enable offline queue if the API is unavailable (default: true) */
   offline?: boolean
-  /** Taille max de la queue offline (défaut: 1000) */
+  /** Max offline queue size (default: 1000) */
   maxQueueSize?: number
-  /** Intervalle de retry en ms (défaut: 30000 = 30s) */
+  /** Retry interval in ms (default: 30000 = 30s) */
   retryInterval?: number
-  /** Active l'envois des stats de performance */
+  /** Enable performance stats reporting */
   performance?: boolean
-  /** Intervalle entre chaque log de perf */
+  /** Interval between performance logs */
   performanceInterval?: number
-  /** Message personnalisé pour les logs de perf */
+  /** Custom message for performance logs */
   performanceCustomMessage?: string
-  /** Active l'envoi des heartbeats (défaut: true) */
+  /** Enable heartbeat sending (default: true) */
   heartbeat?: boolean
-  /** Intervalle entre chaque heartbeat en ms (défaut: 30000) */
+  /** Interval between heartbeats in ms (default: 30000) */
   heartbeatInterval?: number
 }
 
-// ─── Options pour les middlewares (Express / Fastify) ─────────────────────────
+// ─── Middleware options (Express / Fastify) ───────────────────────────────────
 
 export interface MiddlewareOptions {
-  /** Logger les body de requête */
+  /** Log request bodies */
   logBody?: boolean
-  /** Logger les headers */
+  /** Log request headers */
   logHeaders?: boolean
-  /** Routes à exclure du logging (ex: ['/health']) */
+  /** Routes to exclude from logging (e.g. ['/health']) */
   exclude?: string[]
-  /** Niveaux de log par catégorie de status HTTP */
+  /** Log levels per HTTP status category */
   level?: {
-    /** 2xx (défaut: 'info') */
+    /** 2xx (default: 'info') */
     success?: LogLevel
-    /** 4xx (défaut: 'warn') */
+    /** 4xx (default: 'warn') */
     clientError?: LogLevel
-    /** 5xx (défaut: 'error') */
+    /** 5xx (default: 'error') */
     serverError?: LogLevel
   }
 }

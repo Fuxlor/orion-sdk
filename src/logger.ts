@@ -4,22 +4,22 @@ import { getHeartbeatThread } from './heartbeat.js'
 import type { LogLevel, LogPayload, OrionConfig } from './types.js'
 
 /**
- * Logger — l'objet que l'utilisateur manipule au quotidien.
+ * Logger — the object the user interacts with daily.
  *
- * UTILISATION :
+ * USAGE:
  *   const logger = await createLogger()
- *   logger.info('Serveur démarré')
- *   logger.error('Connexion BDD échouée')
- *   logger.send('warn', 'Rate limit atteint')
- *   logger.send({ level: 'debug', message: 'Request reçue', userId: '123' })
- * 
- *   const logger = Orion.createLogger('debug')
- *   logger.send('Serveur démarré')
+ *   logger.info('Server started')
+ *   logger.error('DB connection failed')
+ *   logger.send('warn', 'Rate limit reached')
+ *   logger.send({ level: 'debug', message: 'Request received', userId: '123' })
  *
- * ENVOI :
- *   Chaque log est envoyé via un POST HTTP (fetch natif).
- *   Si l'API est indisponible et que le mode offline est activé,
- *   les logs sont mis en queue et réenvoyés automatiquement.
+ *   const logger = Orion.createLogger('debug')
+ *   logger.send('Server started')
+ *
+ * SENDING:
+ *   Each log is sent via an HTTP POST (native fetch).
+ *   If the API is unavailable and offline mode is enabled,
+ *   logs are queued and automatically retried.
  */
 export class Logger {
   private readonly url: string
@@ -51,7 +51,7 @@ export class Logger {
     }
   }
 
-  // ─── Méthodes par niveau ──────────────────────────────────────────────────────
+  // ─── Level methods ────────────────────────────────────────────────────────────
 
   info(message: string, meta?: Record<string, unknown>): void {
     this.log('info', message, meta)
@@ -77,13 +77,13 @@ export class Logger {
     this.log('trace', message, meta)
   }
 
-  // ─── Méthode send (surcharge) ─────────────────────────────────────────────────
+  // ─── send() method (overloads) ────────────────────────────────────────────────
 
   /**
-   * send() accepte plusieurs formes :
-   *   logger.send('mon message')                         // utilise le defaultLevel
-   *   logger.send('debug', 'mon message')                // niveau explicite
-   *   logger.send({ level: 'error', message: '...', userId: '123' })  // structuré
+   * send() accepts several forms:
+   *   logger.send('my message')                          // uses defaultLevel
+   *   logger.send('debug', 'my message')                 // explicit level
+   *   logger.send({ level: 'error', message: '...', userId: '123' })  // structured
    */
   send(message: string): void
   send(level: LogLevel, message: string): void
@@ -93,10 +93,10 @@ export class Logger {
     message?: string,
   ): void {
     if (typeof levelOrDataOrMsg === 'string' && message !== undefined) {
-      // Forme : send('debug', 'message')
+      // Form: send('debug', 'message')
       this.log(levelOrDataOrMsg as LogLevel, message)
     } else if (typeof levelOrDataOrMsg === 'string') {
-      // Forme : send('message') — utilise le defaultLevel
+      // Form: send('message') — uses defaultLevel
       this.log(this.defaultLevel ?? 'info', levelOrDataOrMsg)
     } else {
       const { level, message: msg, ...meta } = levelOrDataOrMsg
@@ -104,11 +104,11 @@ export class Logger {
     }
   }
 
-  // ─── Envoi HTTP direct ────────────────────────────────────────────────────────
+  // ─── Direct HTTP send ─────────────────────────────────────────────────────────
 
   /**
-   * Envoie un payload à l'API Orion via fetch.
-   * @throws Si la réponse n'est pas ok (pour que la queue puisse réessayer)
+   * Sends a payload to the Orion API via fetch.
+   * @throws If the response is not ok (so the queue can retry)
    */
   private async httpSend(payload: LogPayload): Promise<void> {
     const response = await fetch(this.url, {
@@ -122,16 +122,16 @@ export class Logger {
     })
 
     if (!response.ok) {
-      throw new Error(`[Orion] Échec de l'envoi : ${response.status} ${response.statusText}`)
+      throw new Error(`[Orion] Send failed: ${response.status} ${response.statusText}`)
     }
   }
 
-  // ─── Méthode privée centrale ──────────────────────────────────────────────────
+  // ─── Core private method ──────────────────────────────────────────────────────
 
   /**
-   * Construit le payload et tente l'envoi HTTP.
-   * En cas d'échec, enqueue si le mode offline est actif.
-   * Fire & forget : ne bloque jamais l'appelant.
+   * Builds the payload and attempts HTTP send.
+   * On failure, enqueues if offline mode is active.
+   * Fire & forget: never blocks the caller.
    */
   private log(level: LogLevel, message: string, meta?: Record<string, unknown>): void {
     const payload: LogPayload = {
@@ -148,10 +148,10 @@ export class Logger {
     })
   }
 
-  // ─── Fermeture propre ─────────────────────────────────────────────────────────
+  // ─── Clean shutdown ───────────────────────────────────────────────────────────
 
   /**
-   * Ferme la queue et les timers (à appeler en shutdown de l'app).
+   * Closes the queue and timers (call on app shutdown).
    *   process.on('SIGTERM', () => logger.close())
    */
   close(): void {
