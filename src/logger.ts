@@ -1,5 +1,5 @@
 import { OfflineQueue } from './queue.js'
-import { PerformanceLoggingThread } from './performance.js'
+import { getPerformanceLoggingThread } from './performance.js'
 import type { LogLevel, LogPayload, OrionConfig } from './types.js'
 
 /**
@@ -26,12 +26,10 @@ export class Logger {
   private readonly offlineEnabled: boolean
   private readonly offlineQueue: OfflineQueue | null
   private readonly defaultLevel: LogLevel | null
-  private readonly performanceEnabled: boolean
-  private readonly performanceLoggingThread: PerformanceLoggingThread | null
-
-  constructor(private readonly config: OrionConfig, defaultLevel?: LogLevel) {
+  constructor(config: OrionConfig, defaultLevel?: LogLevel) {
     this.defaultLevel = defaultLevel ?? null
-    this.url = `http://localhost:3001/api/projects/${config.projectName}/sources/${config.sourceName}/logs/emit`
+    const apiUrl = config.apiUrl ?? 'http://localhost:3001/api'
+    this.url = `${apiUrl}/projects/${config.projectName}/sources/${config.sourceName}/logs/emit`
 
     this.headers = {
       'Content-Type': 'application/json',
@@ -42,8 +40,10 @@ export class Logger {
     this.offlineQueue = this.offlineEnabled
       ? new OfflineQueue(config, (payload) => this.httpSend(payload))
       : null
-    this.performanceEnabled = config.performance !== false
-    this.performanceLoggingThread = this.performanceEnabled ? new PerformanceLoggingThread(config) : null
+
+    if (config.performance !== false) {
+      getPerformanceLoggingThread(config)
+    }
   }
 
   // ─── Méthodes par niveau ──────────────────────────────────────────────────────
@@ -82,9 +82,9 @@ export class Logger {
    */
   send(message: string): void
   send(level: LogLevel, message: string): void
-  send(data: { level?: LogLevel; message?: string; [key: string]: unknown }): void
+  send(data: { level?: LogLevel; message?: string;[key: string]: unknown }): void
   send(
-    levelOrDataOrMsg: LogLevel | string | { level?: LogLevel; message?: string; [key: string]: unknown },
+    levelOrDataOrMsg: LogLevel | string | { level?: LogLevel; message?: string;[key: string]: unknown },
     message?: string,
   ): void {
     if (typeof levelOrDataOrMsg === 'string' && message !== undefined) {

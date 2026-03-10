@@ -104,11 +104,11 @@ export function loadConfig(): OrionConfig {
   }
 
   const fileConfig = parseConfigFile(configPath)
-  if (fileConfig.performanceInterval && fileConfig.performanceInterval < 1000) {
-    console.warn(`[Orion] performanceInterval est trop court, il doit être supérieur à 1000ms.`) 
-    fileConfig.performanceInterval = 1000
-  }
   const config = { ...DEFAULTS, ...fileConfig }
+
+  if (config.performanceInterval && config.performanceInterval < 10000) {
+    config.performanceInterval = 10000
+  }
 
   // Validation des champs obligatoires
   const missing: string[] = []
@@ -152,7 +152,16 @@ export function resolveConfig(override?: Partial<OrionConfig>): OrionConfig {
     }
   }
 
-  const config = { ...DEFAULTS, ...fileConfig, ...override }
+  const config = { ...fileConfig, ...override }
+  for (const [key, value] of Object.entries(config)) {
+    if (value === undefined && key in DEFAULTS) {
+      (config as Record<string, unknown>)[key] = DEFAULTS[key as keyof typeof DEFAULTS]
+    }
+  }
+
+  if (config.performanceInterval && config.performanceInterval < 10000) {
+    config.performanceInterval = 10000
+  }
 
   const missing: string[] = []
   if (!config.token) missing.push('token')
