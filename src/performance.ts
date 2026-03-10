@@ -33,9 +33,9 @@ export class PerformanceLoggingThread {
             headers: this.headers,
             body: JSON.stringify({
                 message: this.config.performanceCustomMessage ?? "[orion:perf] System metrics",
-                cpu: stats.cpu,
-                memory_used_mb: stats.memory,
-                memory_total_mb: process.availableMemory(),
+                cpu: stats.cpu.toFixed(2),
+                memory_used_bytes: process.memoryUsage().heapUsed,
+                memory_total_bytes: process.memoryUsage().heapTotal,
                 uptime: stats.elapsed,
             }),
             signal: AbortSignal.timeout(5000),
