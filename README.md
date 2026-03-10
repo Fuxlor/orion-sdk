@@ -25,7 +25,6 @@ export default defineConfig({
 
 ### Options de configuration
 
-```markdown
 | Option                     | Type      | Défaut  | Description                              |
 | -------------------------- | --------- | ------- | ---------------------------------------- |
 | `token`                    | `string`  | —       | Token d'authentification (obligatoire)   |
@@ -37,7 +36,6 @@ export default defineConfig({
 | `performance`              | `boolean` | `false` | Active le monitoring de performance      |
 | `performanceInterval`      | `number`  | `60000` | Intervalle de collecte de performance    |
 | `performanceCustomMessage` | `string`  | —       | Message personnalisé pour la performance |
-```
 
 ---
 
