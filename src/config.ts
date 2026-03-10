@@ -10,6 +10,8 @@ const DEFAULTS = {
   retryInterval: 30_000,
   performance: false,
   performanceInterval: 60_000,
+  heartbeat: true,
+  heartbeatInterval: 30_000,
 } satisfies Partial<OrionConfig>
 
 // ─── defineConfig ─────────────────────────────────────────────────────────────
@@ -81,6 +83,8 @@ function parseConfigFile(filePath: string): Partial<OrionConfig> {
     performance: extractBool('performance'),
     performanceInterval: extractNum('performanceInterval'),
     performanceCustomMessage: extract('performanceCustomMessage'),
+    heartbeat: extractBool('heartbeat'),
+    heartbeatInterval: extractNum('heartbeatInterval'),
   }
 }
 
@@ -108,6 +112,10 @@ export function loadConfig(): OrionConfig {
 
   if (config.performanceInterval && config.performanceInterval < 10000) {
     config.performanceInterval = 10000
+  }
+
+  if (config.heartbeatInterval && config.heartbeatInterval < 30000) {
+    config.heartbeatInterval = 30000
   }
 
   // Validation des champs obligatoires
@@ -161,6 +169,10 @@ export function resolveConfig(override?: Partial<OrionConfig>): OrionConfig {
 
   if (config.performanceInterval && config.performanceInterval < 10000) {
     config.performanceInterval = 10000
+  }
+
+  if (config.heartbeatInterval && config.heartbeatInterval < 30000) {
+    config.heartbeatInterval = 30000
   }
 
   const missing: string[] = []

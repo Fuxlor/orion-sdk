@@ -1,5 +1,6 @@
 import { OfflineQueue } from './queue.js'
 import { getPerformanceLoggingThread } from './performance.js'
+import { getHeartbeatThread } from './heartbeat.js'
 import type { LogLevel, LogPayload, OrionConfig } from './types.js'
 
 /**
@@ -43,6 +44,10 @@ export class Logger {
 
     if (config.performance !== false) {
       getPerformanceLoggingThread(config)
+    }
+
+    if (config.heartbeat !== false) {
+      getHeartbeatThread(config)
     }
   }
 

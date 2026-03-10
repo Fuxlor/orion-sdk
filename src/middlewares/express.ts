@@ -39,8 +39,13 @@ type ExpressMiddleware = (req: ExpressRequest, res: ExpressResponse, next: NextF
 export async function createOrionMiddleware(options?: MiddlewareOptions): Promise<ExpressMiddleware> {
   // Import dynamique du Logger pour éviter les problèmes de dépendances circulaires
   const { Logger } = await import('../logger.js')
+  const { getHeartbeatThread } = await import('../heartbeat.js')
   const config = resolveConfig()
   const logger = new Logger(config)
+
+  if (config.heartbeat !== false) {
+    getHeartbeatThread(config)
+  }
 
   const exclude = options?.exclude ?? []
   const levels = {

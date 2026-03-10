@@ -34,6 +34,10 @@ export interface OrionConfig {
   performanceInterval?: number
   /** Message personnalisé pour les logs de perf */
   performanceCustomMessage?: string
+  /** Active l'envoi des heartbeats (défaut: true) */
+  heartbeat?: boolean
+  /** Intervalle entre chaque heartbeat en ms (défaut: 30000) */
+  heartbeatInterval?: number
 }
 
 // ─── Options pour les middlewares (Express / Fastify) ─────────────────────────

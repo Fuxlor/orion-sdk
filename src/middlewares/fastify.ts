@@ -42,8 +42,13 @@ export async function orionPlugin(
   options: FastifyPluginOptions,
 ): Promise<void> {
   const { Logger } = await import('../logger.js')
+  const { getHeartbeatThread } = await import('../heartbeat.js')
   const config = resolveConfig()
   const logger = new Logger(config)
+
+  if (config.heartbeat !== false) {
+    getHeartbeatThread(config)
+  }
 
   const exclude = options?.exclude ?? []
   const levels = {
