@@ -38,6 +38,8 @@ export interface OrionConfig {
   heartbeat?: boolean
   /** Interval between heartbeats in ms (default: 30000) */
   heartbeatInterval?: number
+  /** Enable command polling after each heartbeat (default: true) */
+  commandPolling?: boolean
 }
 
 // ─── Middleware options (Express / Fastify) ───────────────────────────────────
