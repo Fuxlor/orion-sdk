@@ -11,7 +11,7 @@ npm install @orion-monitoring/sdk
 
 ## Configuration
 
-Create an `orion.config.ts` file at the root of your project (or use `npx @orion-monitoring/cli`):
+Create an `orion.config.ts` file at the root of your project (or use `npx @orion-monitoring/sdk`):
 
 ```typescript
 import { defineConfig } from '@orion-monitoring/cli'
