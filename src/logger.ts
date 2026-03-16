@@ -53,28 +53,28 @@ export class Logger {
 
   // ─── Level methods ────────────────────────────────────────────────────────────
 
-  info(message: string, meta?: Record<string, unknown>): void {
-    this.log('info', message, meta)
+  info(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
+    this.log('info', message, meta, tags)
   }
 
-  warn(message: string, meta?: Record<string, unknown>): void {
-    this.log('warn', message, meta)
+  warn(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
+    this.log('warn', message, meta, tags)
   }
 
-  error(message: string, meta?: Record<string, unknown>): void {
-    this.log('error', message, meta)
+  error(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
+    this.log('error', message, meta, tags)
   }
 
-  debug(message: string, meta?: Record<string, unknown>): void {
-    this.log('debug', message, meta)
+  debug(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
+    this.log('debug', message, meta, tags)
   }
 
-  verbose(message: string, meta?: Record<string, unknown>): void {
-    this.log('verbose', message, meta)
+  verbose(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
+    this.log('verbose', message, meta, tags)
   }
 
-  trace(message: string, meta?: Record<string, unknown>): void {
-    this.log('trace', message, meta)
+  trace(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
+    this.log('trace', message, meta, tags)
   }
 
   // ─── send() method (overloads) ────────────────────────────────────────────────
@@ -87,9 +87,9 @@ export class Logger {
    */
   send(message: string): void
   send(level: LogLevel, message: string): void
-  send(data: { level?: LogLevel; message?: string;[key: string]: unknown }): void
+  send(data: { level?: LogLevel; message?: string; tags?: string[];[key: string]: unknown }): void
   send(
-    levelOrDataOrMsg: LogLevel | string | { level?: LogLevel; message?: string;[key: string]: unknown },
+    levelOrDataOrMsg: LogLevel | string | { level?: LogLevel; message?: string; tags?: string[];[key: string]: unknown },
     message?: string,
   ): void {
     if (typeof levelOrDataOrMsg === 'string' && message !== undefined) {
@@ -99,8 +99,8 @@ export class Logger {
       // Form: send('message') — uses defaultLevel
       this.log(this.defaultLevel ?? 'info', levelOrDataOrMsg)
     } else {
-      const { level, message: msg, ...meta } = levelOrDataOrMsg
-      this.log(level ?? 'info', String(msg ?? ''), Object.keys(meta).length > 0 ? meta : undefined)
+      const { level, message: msg, tags, ...meta } = levelOrDataOrMsg
+      this.log(level ?? 'info', String(msg ?? ''), Object.keys(meta).length > 0 ? meta : undefined, tags)
     }
   }
 
@@ -117,6 +117,8 @@ export class Logger {
       body: JSON.stringify({
         level: payload.level,
         message: payload.message,
+        ...(payload.meta ? { metadata: payload.meta } : {}),
+        ...(payload.tags && payload.tags.length > 0 ? { tags: payload.tags } : {}),
       }),
       signal: AbortSignal.timeout(5000),
     })
@@ -133,12 +135,13 @@ export class Logger {
    * On failure, enqueues if offline mode is active.
    * Fire & forget: never blocks the caller.
    */
-  private log(level: LogLevel, message: string, meta?: Record<string, unknown>): void {
+  private log(level: LogLevel, message: string, meta?: Record<string, unknown>, tags?: string[]): void {
     const payload: LogPayload = {
       level,
       message,
       timestamp: new Date().toISOString(),
       ...(meta && Object.keys(meta).length > 0 ? { meta } : {}),
+      ...(tags && tags.length > 0 ? { tags } : {}),
     }
 
     this.httpSend(payload).catch(() => {

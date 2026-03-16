@@ -9,6 +9,7 @@ export interface LogPayload {
   message: string
   timestamp: string     // ISO 8601
   meta?: Record<string, unknown>  // optional structured data
+  tags?: string[]                 // optional tags
 }
 
 // ─── Orion config (read from orion.config.ts or passed manually) ──────────────
