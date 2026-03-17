@@ -17,10 +17,10 @@ export interface LogPayload {
 export interface OrionConfig {
   /** Project token, obtained via orion-cli */
   token: string
-  /** Project name (e.g. "my-app") */
-  projectName: string
-  /** Source name (e.g. "api-backend") */
-  sourceName: string
+  /** @deprecated Project name — no longer needed when using a source-bound token */
+  projectName?: string
+  /** @deprecated Source name — no longer needed when using a source-bound token */
+  sourceName?: string
   /** Orion API URL (default: http://localhost:3001/api) */
   apiUrl?: string
   /** Enable offline queue if the API is unavailable (default: true) */

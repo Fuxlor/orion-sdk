@@ -30,7 +30,9 @@ export class Logger {
   constructor(config: OrionConfig, defaultLevel?: LogLevel) {
     this.defaultLevel = defaultLevel ?? null
     const apiUrl = config.apiUrl ?? 'http://localhost:3001/api'
-    this.url = `${apiUrl}/projects/${config.projectName}/sources/${config.sourceName}/logs/emit`
+    this.url = (config.projectName && config.sourceName)
+      ? `${apiUrl}/projects/${config.projectName}/sources/${config.sourceName}/logs/emit`
+      : `${apiUrl}/logs/emit`
 
     this.headers = {
       'Content-Type': 'application/json',
@@ -46,7 +48,7 @@ export class Logger {
       getPerformanceLoggingThread(config)
     }
 
-    if (config.heartbeat !== false) {
+    if (config.heartbeat !== false && config.projectName && config.sourceName) {
       getHeartbeatThread(config)
     }
   }

@@ -20,8 +20,8 @@ const DEFAULTS = {
  * Helper to type orion.config.ts (like Vite's defineConfig).
  *
  * Usage in orion.config.ts:
- *   import { defineConfig } from 'orion'
- *   export default defineConfig({ token: '...', projectName: '...', sourceName: '...' })
+ *   import { defineConfig } from '@orion-monitoring/sdk'
+ *   export default defineConfig({ token: '...' })
  */
 export function defineConfig(config: OrionConfig): OrionConfig {
   return config
@@ -119,14 +119,9 @@ export function loadConfig(): OrionConfig {
   }
 
   // Validate required fields
-  const missing: string[] = []
-  if (!config.token) missing.push('token')
-  if (!config.projectName) missing.push('projectName')
-  if (!config.sourceName) missing.push('sourceName')
-
-  if (missing.length > 0) {
+  if (!config.token) {
     throw new Error(
-      `[Orion] Incomplete configuration in ${configPath}, missing fields: ${missing.join(', ')}.`
+      `[Orion] Incomplete configuration in ${configPath}, missing field: token.`
     )
   }
 
@@ -147,7 +142,7 @@ export function loadConfig(): OrionConfig {
 export function resolveConfig(override?: Partial<OrionConfig>): OrionConfig {
   let fileConfig: Partial<OrionConfig> = {}
 
-  const needsAutoDetect = !override?.token || !override?.projectName || !override?.sourceName
+  const needsAutoDetect = !override?.token
 
   if (needsAutoDetect) {
     const configPath = findConfigFile(process.cwd())
@@ -175,16 +170,11 @@ export function resolveConfig(override?: Partial<OrionConfig>): OrionConfig {
     config.heartbeatInterval = 30000
   }
 
-  const missing: string[] = []
-  if (!config.token) missing.push('token')
-  if (!config.projectName) missing.push('projectName')
-  if (!config.sourceName) missing.push('sourceName')
-
-  if (missing.length > 0) {
+  if (!config.token) {
     throw new Error(
-      `[Orion] Incomplete configuration, missing fields: ${missing.join(', ')}.\n` +
-      `  → Run "npx orion-cli init" to generate orion.config.ts, or pass the config manually:\n` +
-      `  → createLogger({ token: '...', projectName: '...', sourceName: '...' })`
+      `[Orion] Incomplete configuration, missing field: token.\n` +
+      `  → Run "npx @orion-monitoring/cli" to generate orion.config.ts, or pass the config manually:\n` +
+      `  → createLogger({ token: '...' })`
     )
   }
 
