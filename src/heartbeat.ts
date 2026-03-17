@@ -22,7 +22,7 @@ function getLocalIp(): string | undefined {
 
 export class HeartbeatThread {
     private readonly url: string
-    private readonly commandsUrl: string
+    private readonly commandsUrl: string | null
     private readonly headers: Record<string, string>
     private readonly timer: ReturnType<typeof setInterval>
     private readonly hostname: string
@@ -32,10 +32,12 @@ export class HeartbeatThread {
     constructor(config: OrionConfig) {
         this.config = config
         const apiUrl = config.apiUrl ?? 'http://localhost:3001/api'
-        this.url = `${apiUrl}/projects/${config.projectName}/sources/${config.sourceName}/heartbeat`
+        this.url = `${apiUrl}/logs/heartbeat`
         this.hostname = os.hostname()
         this.ip = getLocalIp()
-        this.commandsUrl = `${apiUrl}/projects/${encodeURIComponent(config.projectName)}/servers/${encodeURIComponent(this.hostname)}/commands`
+        this.commandsUrl = config.projectName
+            ? `${apiUrl}/projects/${encodeURIComponent(config.projectName)}/servers/${encodeURIComponent(this.hostname)}/commands`
+            : null
         this.headers = {
             'Authorization': `Bearer ${config.token}`,
             'Content-Type': 'application/json',
@@ -66,13 +68,13 @@ export class HeartbeatThread {
             throw new Error(`[Orion] Heartbeat failed: ${response.status} ${response.statusText}`)
         }
 
-        if (this.config.commandPolling !== false) {
+        if (this.config.commandPolling !== false && this.commandsUrl) {
             await this.pollCommands().catch(() => { })
         }
     }
 
     private async pollCommands(): Promise<void> {
-        const response = await fetch(this.commandsUrl, {
+        const response = await fetch(this.commandsUrl!, {
             headers: this.headers,
             signal: AbortSignal.timeout(5000),
         })
@@ -100,7 +102,7 @@ export class HeartbeatThread {
     }
 
     private async ackCommand(id: number): Promise<void> {
-        await fetch(`${this.commandsUrl}/${id}/ack`, {
+        await fetch(`${this.commandsUrl!}/${id}/ack`, {
             method: 'POST',
             headers: this.headers,
         })
