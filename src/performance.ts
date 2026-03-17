@@ -22,9 +22,7 @@ export class PerformanceLoggingThread {
             throw Error('Invalid performance interval')
         }
         const apiUrl = config.apiUrl ?? 'http://localhost:3001/api'
-        this.url = (config.projectName && config.sourceName)
-            ? `${apiUrl}/projects/${config.projectName}/sources/${config.sourceName}/logs/performance`
-            : `${apiUrl}/logs/performance`
+        this.url = `${apiUrl}/logs/performance`
         this.headers = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${config.token}`,
