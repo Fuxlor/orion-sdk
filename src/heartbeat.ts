@@ -22,7 +22,7 @@ function getLocalIp(): string | undefined {
 
 export class HeartbeatThread {
     private readonly url: string
-    private readonly commandsUrl: string | null
+    private readonly commandsUrl: string
     private readonly headers: Record<string, string>
     private readonly timer: ReturnType<typeof setInterval>
     private readonly hostname: string
@@ -33,11 +33,9 @@ export class HeartbeatThread {
         this.config = config
         const apiUrl = config.apiUrl ?? 'http://localhost:3001/api'
         this.url = `${apiUrl}/logs/heartbeat`
+        this.commandsUrl = `${apiUrl}/logs/commands`
         this.hostname = os.hostname()
         this.ip = getLocalIp()
-        this.commandsUrl = config.projectName
-            ? `${apiUrl}/projects/${encodeURIComponent(config.projectName)}/servers/${encodeURIComponent(this.hostname)}/commands`
-            : null
         this.headers = {
             'Authorization': `Bearer ${config.token}`,
             'Content-Type': 'application/json',
@@ -46,9 +44,7 @@ export class HeartbeatThread {
         const interval = config.heartbeatInterval ?? 30_000
 
         this.timer = setInterval(() => {
-            this.ping().catch(() => {
-                // Silently ignore — heartbeat failures should not crash the app
-            })
+            this.ping()
         }, interval)
 
         this.timer.unref()
@@ -68,25 +64,23 @@ export class HeartbeatThread {
             throw new Error(`[Orion] Heartbeat failed: ${response.status} ${response.statusText}`)
         }
 
-        if (this.config.commandPolling !== false && this.commandsUrl) {
+        if (this.config.commandPolling !== false) {
             await this.pollCommands().catch(() => { })
         }
     }
 
     private async pollCommands(): Promise<void> {
-        const response = await fetch(this.commandsUrl!, {
+        const url = `${this.commandsUrl}?hostname=${encodeURIComponent(this.hostname)}`
+        const response = await fetch(url, {
             headers: this.headers,
-            signal: AbortSignal.timeout(5000),
         })
         if (!response.ok) return
 
         const data = await response.json() as {
-            commands: Array<{ id: number; type: 'restart' | 'stop'; source_name: string | null }>
+            commands: Array<{ id: number; type: 'restart' | 'stop' }>
         }
         for (const cmd of data.commands ?? []) {
-            if (cmd.source_name === this.config.sourceName) {
-                this.executeCommand(cmd.id, cmd.type)
-            }
+            this.executeCommand(cmd.id, cmd.type)
         }
     }
 
@@ -102,7 +96,7 @@ export class HeartbeatThread {
     }
 
     private async ackCommand(id: number): Promise<void> {
-        await fetch(`${this.commandsUrl!}/${id}/ack`, {
+        await fetch(`${this.commandsUrl}/${id}/ack?hostname=${encodeURIComponent(this.hostname)}`, {
             method: 'POST',
             headers: this.headers,
         })
