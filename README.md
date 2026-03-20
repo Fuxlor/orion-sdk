@@ -1,7 +1,15 @@
-# Orion SDK
+# @orion-monitoring/sdk
 
-TypeScript client SDK for the **Orion** monitoring platform.
-Sends logs from your Node.js application to the Orion API.
+TypeScript client SDK for the [Orion](https://orion.dev) monitoring platform. Sends structured logs from your Node.js application to the Orion API.
+
+## Features
+
+- 6 log severity levels
+- Offline queue with automatic retry
+- Optional CPU/memory performance monitoring
+- Optional heartbeat with remote command polling
+- Express and Fastify middleware adapters
+- Zero core runtime dependencies (uses Node 18+ native `fetch`)
 
 ## Installation
 
@@ -9,39 +17,27 @@ Sends logs from your Node.js application to the Orion API.
 npm install @orion-monitoring/sdk
 ```
 
-## Configuration
+## Setup
 
-Create an `orion.config.ts` file at the root of your project (or use `npx @orion-monitoring/sdk`):
+Generate `orion.config.ts` with the CLI:
+
+```bash
+npx @orion-monitoring/cli
+```
+
+Or create it manually:
 
 ```typescript
-import { defineConfig } from '@orion-monitoring/cli'
+import { defineConfig } from '@orion-monitoring/sdk'
 
 export default defineConfig({
-  token: 'your-token',
-  projectName: 'my-project',
-  sourceName: 'api-backend',
+  token: 'your-sdk-token',
 })
 ```
 
-### Configuration options
-
-| Option                     | Type      | Default | Description                              |
-| -------------------------- | --------- | ------- | ---------------------------------------- |
-| `token`                    | `string`  | —       | Authentication token (required)          |
-| `projectName`              | `string`  | —       | Project name (required)                  |
-| `sourceName`               | `string`  | —       | Source name (required)                   |
-| `offline`                  | `boolean` | `true`  | Enable the offline queue                 |
-| `maxQueueSize`             | `number`  | `1000`  | Maximum queue size                       |
-| `retryInterval`            | `number`  | `30000` | Retry interval in ms                     |
-| `performance`              | `boolean` | `false` | Enable performance monitoring            |
-| `performanceInterval`      | `number`  | `60000` | Performance collection interval          |
-| `performanceCustomMessage` | `string`  | —       | Custom message for performance logs      |
-
----
-
 ## Usage
 
-### Basic logger
+### Basic logging
 
 ```typescript
 import { createLogger } from '@orion-monitoring/sdk'
@@ -49,30 +45,29 @@ import { createLogger } from '@orion-monitoring/sdk'
 const logger = createLogger()
 
 logger.info('Server started')
-logger.warn('Rate limit reached')
-logger.error('DB connection failed')
-logger.debug('Request received')
-logger.verbose('Request details')
-logger.trace('Entered function')
+logger.warn('High memory usage', { heap: '450MB' })
+logger.error('Database connection failed', { error: 'ECONNREFUSED', port: 5432 })
+logger.debug('Cache updated')
+logger.verbose('Request details', { path: '/api/users' })
+logger.trace('Entered function processPayment')
 ```
 
-### Logger with explicit config
+### With explicit config
 
 ```typescript
-import { createLogger } from '@orion-monitoring/sdk'
-
 const logger = createLogger({
   token: 'my-token',
-  projectName: 'my-project',
-  sourceName: 'api-backend',
+  performance: true,
 })
 ```
 
 ### Structured logs
 
 ```typescript
-logger.send('error', 'Database crash')
+// Explicit level as first argument
+logger.send('error', 'Payment failed')
 
+// Object form — attach any metadata
 logger.send({
   level: 'error',
   message: 'Payment failed',
@@ -81,50 +76,54 @@ logger.send({
 })
 ```
 
-### Pre-configured logger
+### Pre-configured default level
 
 ```typescript
-import { createLogger } from '@orion-monitoring/sdk'
+import { Orion } from '@orion-monitoring/sdk'
 
-logger = createLogger('debug')
-
-logger.send('Debug log')
+const logger = Orion.createLogger('debug')
+logger.send('Cache warmed')  // logged at 'debug' level
 ```
 
----
+### Clean shutdown
+
+```typescript
+process.on('SIGTERM', () => {
+  logger.close()  // flushes queue and stops background intervals
+  process.exit(0)
+})
+```
 
 ## Express Middleware
 
 ```typescript
 import express from 'express'
-import { createOrionMiddleware } from 'orion/middlewares/express'
+import { createOrionMiddleware } from '@orion-monitoring/sdk'
 
 const app = express()
 
 app.use(await createOrionMiddleware({
   exclude: ['/health', '/metrics'],
   level: {
-    success: 'info',
-    clientError: 'warn',
-    serverError: 'error',
+    success: 'info',      // 2xx
+    clientError: 'warn',  // 4xx
+    serverError: 'error', // 5xx
   },
+  logBody: false,
+  logHeaders: false,
 }))
 
 app.get('/api/users', (req, res) => {
   res.json([{ name: 'Alice' }])
 })
-// → Automatically logs: "GET /api/users 200 — 12ms"
-
-app.listen(3000)
+// → Logs: "GET /api/users 200 — 12ms"
 ```
-
----
 
 ## Fastify Plugin
 
 ```typescript
 import Fastify from 'fastify'
-import { orionPlugin } from 'orion/middlewares/fastify'
+import { orionPlugin } from '@orion-monitoring/sdk'
 
 const fastify = Fastify()
 
@@ -135,48 +134,57 @@ await fastify.register(orionPlugin, {
 fastify.get('/api/users', async () => {
   return [{ name: 'Alice' }]
 })
-// → Automatically logs: "GET /api/users 200 — 5ms"
+// → Logs: "GET /api/users 200 — 5ms"
 
 await fastify.listen({ port: 3000 })
 ```
 
----
+## Offline Mode
 
-## Offline mode
+When the Orion API is unreachable, logs are buffered in memory and retried automatically.
 
-By default, if the Orion API is unavailable, logs are stored in memory and automatically retried every 30 seconds.
-
-- **FIFO Queue**: oldest logs are dropped if the queue reaches 1000 entries
-- **Automatic retry**: every 30s (configurable via `retryInterval`)
-- **Disableable**: `offline: false` in the config
+- **FIFO queue**: oldest entries are dropped when the queue is full
+- **Automatic retry**: every 30s by default
+- **Configurable**: adjust size and interval, or disable entirely
 
 ```typescript
 const logger = createLogger({
   token: '...',
-  projectName: '...',
-  sourceName: '...',
-  offline: true,        // default
-  maxQueueSize: 500,    // custom
-  retryInterval: 10000, // 10 seconds
+  offline: true,         // default
+  maxQueueSize: 500,
+  retryInterval: 10000,  // 10s
 })
 ```
 
----
+## Configuration
 
-## Clean shutdown
+All options for `orion.config.ts` or the `createLogger()` override:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `token` | `string` | — | **Required.** SDK token for your source |
+| `offline` | `boolean` | `true` | Buffer and retry logs on API failure |
+| `maxQueueSize` | `number` | `1000` | Max buffered logs (oldest dropped when full) |
+| `retryInterval` | `number` | `30000` | Queue retry interval in ms |
+| `performance` | `boolean` | `false` | Collect and send CPU/memory metrics |
+| `performanceInterval` | `number` | `60000` | Metrics collection interval in ms (min 10000) |
+| `performanceCustomMessage` | `string` | — | Custom label attached to performance logs |
+| `heartbeat` | `boolean` | `true` | Send periodic pings to mark server online |
+| `heartbeatInterval` | `number` | `30000` | Heartbeat interval in ms (min 30000) |
+| `commandPolling` | `boolean` | `true` | Poll for remote commands (restart/stop) |
+
+## Log Levels
 
 ```typescript
-process.on('SIGTERM', () => {
-  logger.close()
-  process.exit(0)
-})
+type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'verbose' | 'trace'
 ```
 
----
+## Requirements
 
-## Constraints
+- Node.js >= 18.0.0
+- ESM project (`"type": "module"` in `package.json`)
+- `express` or `fastify` as optional peer dependencies (only needed for their respective adapters)
 
-- **Strict TypeScript**, ESM only
-- **Node.js >= 18** (uses native `fetch`)
-- **Zero runtime dependencies**
-- `express` and `fastify` as optional `peerDependencies`
+## License
+
+MIT
