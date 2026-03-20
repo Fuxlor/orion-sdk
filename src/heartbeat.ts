@@ -44,12 +44,12 @@ export class HeartbeatThread {
         const interval = config.heartbeatInterval ?? 30_000
 
         this.timer = setInterval(() => {
-            this.ping()
+            this.ping().catch(() => { })
         }, interval)
 
         this.timer.unref()
 
-        this.ping()
+        this.ping().catch(() => { })
     }
 
     private async ping(): Promise<void> {
@@ -73,6 +73,7 @@ export class HeartbeatThread {
         const url = `${this.commandsUrl}?hostname=${encodeURIComponent(this.hostname)}`
         const response = await fetch(url, {
             headers: this.headers,
+            signal: AbortSignal.timeout(5000),
         })
         if (!response.ok) return
 
