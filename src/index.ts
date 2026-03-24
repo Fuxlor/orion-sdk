@@ -4,7 +4,7 @@
 export type { LogLevel, LogPayload, OrionConfig, MiddlewareOptions } from './types.js'
 
 // Config
-export { defineConfig, loadConfig, resolveConfig } from './config.js'
+export { resolveConfig } from './config.js'
 
 // Logger
 export { Logger } from './logger.js'

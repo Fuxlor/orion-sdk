@@ -1,6 +1,4 @@
 import { OfflineQueue } from './queue.js'
-import { getPerformanceLoggingThread } from './performance.js'
-import { getHeartbeatThread } from './heartbeat.js'
 import type { LogLevel, LogPayload, OrionConfig } from './types.js'
 
 /**
@@ -30,7 +28,7 @@ export class Logger {
   constructor(config: OrionConfig, defaultLevel?: LogLevel) {
     this.defaultLevel = defaultLevel ?? null
     const apiUrl = config.apiUrl ?? 'http://localhost:3001/api'
-    this.url = `${apiUrl}/logs/emit`
+    this.url = `${apiUrl}/agent/log`
 
     this.headers = {
       'Content-Type': 'application/json',
@@ -41,14 +39,6 @@ export class Logger {
     this.offlineQueue = this.offlineEnabled
       ? new OfflineQueue(config, (payload) => this.httpSend(payload))
       : null
-
-    if (config.performance !== false) {
-      getPerformanceLoggingThread(config)
-    }
-
-    if (config.heartbeat !== false) {
-      getHeartbeatThread(config)
-    }
   }
 
   // ─── Level methods ────────────────────────────────────────────────────────────
@@ -115,6 +105,7 @@ export class Logger {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({
+        timestamp: payload.timestamp,
         level: payload.level,
         message: payload.message,
         ...(payload.meta ? { metadata: payload.meta } : {}),

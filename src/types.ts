@@ -29,18 +29,6 @@ export interface OrionConfig {
   maxQueueSize?: number
   /** Retry interval in ms (default: 30000 = 30s) */
   retryInterval?: number
-  /** Enable performance stats reporting */
-  performance?: boolean
-  /** Interval between performance logs */
-  performanceInterval?: number
-  /** Custom message for performance logs */
-  performanceCustomMessage?: string
-  /** Enable heartbeat sending (default: true) */
-  heartbeat?: boolean
-  /** Interval between heartbeats in ms (default: 30000) */
-  heartbeatInterval?: number
-  /** Enable command polling after each heartbeat (default: true) */
-  commandPolling?: boolean
 }
 
 // ─── Middleware options (Express / Fastify) ───────────────────────────────────
