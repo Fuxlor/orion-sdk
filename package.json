@@ -46,10 +46,22 @@
   "keywords": [
     "logging",
     "monitoring",
+    "observability",
+    "error-tracking",
+    "nodejs",
     "orion",
     "sdk"
   ],
+  "author": "Orion Monitoring",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USER/orion"
+  },
+  "homepage": "https://github.com/YOUR_USER/orion/tree/main/orion-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/YOUR_USER/orion/issues"
+  },
   "dependencies": {
     "pidusage": "^4.0.1"
   }

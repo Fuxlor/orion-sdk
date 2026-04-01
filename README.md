@@ -14,7 +14,15 @@ TypeScript client SDK for the [Orion](https://orion.dev) monitoring platform. Se
 ## Installation
 
 ```bash
-npm install @orion-monitoring/sdk
+npm install orion-monitoring
+```
+
+## Quick start
+
+```typescript
+import { createLogger } from 'orion-monitoring'
+const logger = createLogger({ token: 'your-sdk-token' })
+logger.info('Server started')
 ```
 
 ## Setup
@@ -28,9 +36,9 @@ npx @orion-monitoring/cli
 Or create it manually:
 
 ```typescript
-import { defineConfig } from '@orion-monitoring/sdk'
+import { resolveConfig } from 'orion-monitoring'
 
-export default defineConfig({
+export default resolveConfig({
   token: 'your-sdk-token',
 })
 ```
@@ -40,7 +48,7 @@ export default defineConfig({
 ### Basic logging
 
 ```typescript
-import { createLogger } from '@orion-monitoring/sdk'
+import { createLogger } from 'orion-monitoring'
 
 const logger = createLogger()
 
@@ -79,7 +87,7 @@ logger.send({
 ### Pre-configured default level
 
 ```typescript
-import { Orion } from '@orion-monitoring/sdk'
+import { Orion } from 'orion-monitoring'
 
 const logger = Orion.createLogger('debug')
 logger.send('Cache warmed')  // logged at 'debug' level
@@ -98,7 +106,7 @@ process.on('SIGTERM', () => {
 
 ```typescript
 import express from 'express'
-import { createOrionMiddleware } from '@orion-monitoring/sdk'
+import { createOrionMiddleware } from 'orion-monitoring'
 
 const app = express()
 
@@ -123,7 +131,7 @@ app.get('/api/users', (req, res) => {
 
 ```typescript
 import Fastify from 'fastify'
-import { orionPlugin } from '@orion-monitoring/sdk'
+import { orionPlugin } from 'orion-monitoring'
 
 const fastify = Fastify()
 
@@ -146,6 +154,7 @@ When the Orion API is unreachable, logs are buffered in memory and retried autom
 - **FIFO queue**: oldest entries are dropped when the queue is full
 - **Automatic retry**: every 30s by default
 - **Configurable**: adjust size and interval, or disable entirely
+- **Drop callback**: get notified when a log is dropped due to a full queue
 
 ```typescript
 const logger = createLogger({
@@ -153,6 +162,9 @@ const logger = createLogger({
   offline: true,         // default
   maxQueueSize: 500,
   retryInterval: 10000,  // 10s
+  onDrop: (log) => {
+    console.warn('[Orion] Log dropped (queue full):', log.message)
+  },
 })
 ```
 
@@ -166,6 +178,7 @@ All options for `orion.config.ts` or the `createLogger()` override:
 | `offline` | `boolean` | `true` | Buffer and retry logs on API failure |
 | `maxQueueSize` | `number` | `1000` | Max buffered logs (oldest dropped when full) |
 | `retryInterval` | `number` | `30000` | Queue retry interval in ms |
+| `onDrop` | `(log: LogPayload) => void` | — | Called when a log is dropped (queue full) |
 | `performance` | `boolean` | `false` | Collect and send CPU/memory metrics |
 | `performanceInterval` | `number` | `60000` | Metrics collection interval in ms (min 10000) |
 | `performanceCustomMessage` | `string` | — | Custom label attached to performance logs |

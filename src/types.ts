@@ -29,6 +29,8 @@ export interface OrionConfig {
   maxQueueSize?: number
   /** Retry interval in ms (default: 30000 = 30s) */
   retryInterval?: number
+  /** Called when a log is dropped because the offline queue is full */
+  onDrop?: (dropped: LogPayload) => void
 }
 
 // ─── Middleware options (Express / Fastify) ───────────────────────────────────

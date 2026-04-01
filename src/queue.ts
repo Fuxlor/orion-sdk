@@ -18,12 +18,14 @@ export class OfflineQueue {
   private readonly retryInterval: number
   private retryTimer: ReturnType<typeof setInterval> | null = null
   private readonly sendFn: (payload: LogPayload) => Promise<void>
+  private readonly onDrop: ((dropped: LogPayload) => void) | undefined
   private flushing = false
 
   constructor(config: OrionConfig, sendFn: (payload: LogPayload) => Promise<void>) {
     this.maxSize = config.maxQueueSize ?? 1000
     this.retryInterval = config.retryInterval ?? 30_000
     this.sendFn = sendFn
+    this.onDrop = config.onDrop
   }
 
   /** Number of pending entries */
@@ -36,7 +38,8 @@ export class OfflineQueue {
    */
   enqueue(payload: LogPayload): void {
     if (this.queue.length >= this.maxSize) {
-      this.queue.shift()
+      const dropped = this.queue.shift()!
+      this.onDrop?.(dropped)
     }
     this.queue.push(payload)
     this.startRetryLoop()
