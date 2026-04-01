@@ -1,4 +1,4 @@
-# @orion-monitoring/sdk
+# orion-monitoring
 
 TypeScript client SDK for the [Orion](https://orion.dev) monitoring platform. Sends structured logs from your Node.js application to the Orion API.
 
