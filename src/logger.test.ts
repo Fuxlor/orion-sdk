@@ -33,7 +33,7 @@ describe('Logger - HTTP send', () => {
 
     expect(mockFetch).toHaveBeenCalledOnce()
     const [url] = mockFetch.mock.calls[0] as [string, RequestInit]
-    expect(url).toBe('http://localhost:3001/api/agent/log')
+    expect(url).toBe('http://localhost:3001/api/v1/agent/log')
   })
 
   it('sends Authorization header with bearer token', async () => {

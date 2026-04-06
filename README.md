@@ -56,7 +56,7 @@ logger.info('Server started')
 logger.warn('High memory usage', { heap: '450MB' })
 logger.error('Database connection failed', { error: 'ECONNREFUSED', port: 5432 })
 logger.debug('Cache updated')
-logger.verbose('Request details', { path: '/api/users' })
+logger.verbose('Request details', { path: '/api/v1/users' })
 logger.trace('Entered function processPayment')
 ```
 
@@ -121,10 +121,10 @@ app.use(await createOrionMiddleware({
   logHeaders: false,
 }))
 
-app.get('/api/users', (req, res) => {
+app.get('/api/v1/users', (req, res) => {
   res.json([{ name: 'Alice' }])
 })
-// → Logs: "GET /api/users 200 — 12ms"
+// → Logs: "GET /api/v1/users 200 — 12ms"
 ```
 
 ## Fastify Plugin
@@ -139,10 +139,10 @@ await fastify.register(orionPlugin, {
   exclude: ['/health'],
 })
 
-fastify.get('/api/users', async () => {
+fastify.get('/api/v1/users', async () => {
   return [{ name: 'Alice' }]
 })
-// → Logs: "GET /api/users 200 — 5ms"
+// → Logs: "GET /api/v1/users 200 — 5ms"
 
 await fastify.listen({ port: 3000 })
 ```

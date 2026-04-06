@@ -13,7 +13,7 @@ import { resolveConfig } from '../config.js'
  *     level: { success: 'info', clientError: 'warn', serverError: 'error' }
  *   }))
  *
- * Automatically logs: "GET /api/users 200 — 23ms"
+ * Automatically logs: "GET /api/v1/users 200 — 23ms"
  */
 
 // Minimal types to avoid a direct dependency on express
