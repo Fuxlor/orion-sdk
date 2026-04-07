@@ -60,7 +60,7 @@ export function resolveConfig(override?: Partial<OrionConfig>): OrionConfig {
   if (!config.token) {
     throw new Error(
       `[Orion] Missing token.\n` +
-      `  → Run "npx @orion-monitoring/cli" to generate .orion/config.json, or pass it manually:\n` +
+      `  → Run "npx orion-setup" to generate .orion/config.json, or pass it manually:\n` +
       `  → createLogger({ token: '...' })`
     )
   }
