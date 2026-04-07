@@ -3,7 +3,7 @@ import { Logger } from './logger.js'
 
 const BASE_CONFIG = {
   token: 'test-token',
-  apiUrl: 'http://localhost:3001/api',
+  apiUrl: 'http://localhost:3001/api/v1',
   offline: false, // disable queue for most tests to keep them simple
 }
 

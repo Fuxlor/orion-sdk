@@ -1,6 +1,6 @@
 // ─── Log levels ───────────────────────────────────────────────────────────────
 
-export type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'verbose' | 'trace'
+export type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'verbose' | 'trace' | 'fatal'
 
 // ─── Log payload sent to the API ─────────────────────────────────────────────
 

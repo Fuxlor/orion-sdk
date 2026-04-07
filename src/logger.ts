@@ -27,7 +27,7 @@ export class Logger {
   private readonly defaultLevel: LogLevel | null
   constructor(config: OrionConfig, defaultLevel?: LogLevel) {
     this.defaultLevel = defaultLevel ?? null
-    const apiUrl = config.apiUrl ?? 'http://localhost:3001/api'
+    const apiUrl = config.apiUrl ?? 'http://localhost:3001/api/v1'
     this.url = `${apiUrl}/agent/log`
 
     this.headers = {
@@ -42,29 +42,57 @@ export class Logger {
   }
 
   // ─── Level methods ────────────────────────────────────────────────────────────
+  // Each level method accepts two calling conventions:
+  //   logger.info('msg', { key: 'val' }, ['tag'])            // positional (legacy)
+  //   logger.info('msg', { metadata: { key: 'val' }, tags: ['tag'] })  // options object
 
-  info(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
-    this.log('info', message, meta, tags)
+  info(message: string, options: { metadata?: Record<string, unknown>; tags?: string[] }): void
+  info(message: string, meta?: Record<string, unknown>, tags?: string[]): void
+  info(message: string, metaOrOptions?: Record<string, unknown>, tags?: string[]): void {
+    const [meta, resolvedTags] = this.resolveMetaArgs(metaOrOptions, tags)
+    this.log('info', message, meta, resolvedTags)
   }
 
-  warn(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
-    this.log('warn', message, meta, tags)
+  warn(message: string, options: { metadata?: Record<string, unknown>; tags?: string[] }): void
+  warn(message: string, meta?: Record<string, unknown>, tags?: string[]): void
+  warn(message: string, metaOrOptions?: Record<string, unknown>, tags?: string[]): void {
+    const [meta, resolvedTags] = this.resolveMetaArgs(metaOrOptions, tags)
+    this.log('warn', message, meta, resolvedTags)
   }
 
-  error(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
-    this.log('error', message, meta, tags)
+  error(message: string, options: { metadata?: Record<string, unknown>; tags?: string[] }): void
+  error(message: string, meta?: Record<string, unknown>, tags?: string[]): void
+  error(message: string, metaOrOptions?: Record<string, unknown>, tags?: string[]): void {
+    const [meta, resolvedTags] = this.resolveMetaArgs(metaOrOptions, tags)
+    this.log('error', message, meta, resolvedTags)
   }
 
-  debug(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
-    this.log('debug', message, meta, tags)
+  debug(message: string, options: { metadata?: Record<string, unknown>; tags?: string[] }): void
+  debug(message: string, meta?: Record<string, unknown>, tags?: string[]): void
+  debug(message: string, metaOrOptions?: Record<string, unknown>, tags?: string[]): void {
+    const [meta, resolvedTags] = this.resolveMetaArgs(metaOrOptions, tags)
+    this.log('debug', message, meta, resolvedTags)
   }
 
-  verbose(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
-    this.log('verbose', message, meta, tags)
+  verbose(message: string, options: { metadata?: Record<string, unknown>; tags?: string[] }): void
+  verbose(message: string, meta?: Record<string, unknown>, tags?: string[]): void
+  verbose(message: string, metaOrOptions?: Record<string, unknown>, tags?: string[]): void {
+    const [meta, resolvedTags] = this.resolveMetaArgs(metaOrOptions, tags)
+    this.log('verbose', message, meta, resolvedTags)
   }
 
-  trace(message: string, meta?: Record<string, unknown>, tags?: string[]): void {
-    this.log('trace', message, meta, tags)
+  trace(message: string, options: { metadata?: Record<string, unknown>; tags?: string[] }): void
+  trace(message: string, meta?: Record<string, unknown>, tags?: string[]): void
+  trace(message: string, metaOrOptions?: Record<string, unknown>, tags?: string[]): void {
+    const [meta, resolvedTags] = this.resolveMetaArgs(metaOrOptions, tags)
+    this.log('trace', message, meta, resolvedTags)
+  }
+
+  fatal(message: string, options: { metadata?: Record<string, unknown>; tags?: string[] }): void
+  fatal(message: string, meta?: Record<string, unknown>, tags?: string[]): void
+  fatal(message: string, metaOrOptions?: Record<string, unknown>, tags?: string[]): void {
+    const [meta, resolvedTags] = this.resolveMetaArgs(metaOrOptions, tags)
+    this.log('fatal', message, meta, resolvedTags)
   }
 
   // ─── send() method (overloads) ────────────────────────────────────────────────
@@ -76,15 +104,17 @@ export class Logger {
    *   logger.send({ level: 'error', message: '...', userId: '123' })  // structured
    */
   send(message: string): void
-  send(level: LogLevel, message: string): void
+  send(level: LogLevel, message: string, meta?: Record<string, unknown>, tags?: string[]): void
   send(data: { level?: LogLevel; message?: string; tags?: string[];[key: string]: unknown }): void
   send(
     levelOrDataOrMsg: LogLevel | string | { level?: LogLevel; message?: string; tags?: string[];[key: string]: unknown },
     message?: string,
+    meta?: Record<string, unknown>,
+    tags?: string[],
   ): void {
     if (typeof levelOrDataOrMsg === 'string' && message !== undefined) {
       // Form: send('debug', 'message')
-      this.log(levelOrDataOrMsg as LogLevel, message)
+      this.log(levelOrDataOrMsg as LogLevel, message, meta, tags)
     } else if (typeof levelOrDataOrMsg === 'string') {
       // Form: send('message') — uses defaultLevel
       this.log(this.defaultLevel ?? 'info', levelOrDataOrMsg)
@@ -140,6 +170,38 @@ export class Logger {
         this.offlineQueue.enqueue(payload)
       }
     })
+  }
+
+  // ─── Options form detection ───────────────────────────────────────────────────
+
+  /**
+   * Resolves the second/third arguments of a level method.
+   * Supports two calling conventions:
+   *   positional: (meta?, tags?)
+   *   options:    ({ metadata?, tags? })
+   */
+  private resolveMetaArgs(
+    metaOrOptions: Record<string, unknown> | undefined,
+    tags: string[] | undefined,
+  ): [Record<string, unknown> | undefined, string[] | undefined] {
+    if (metaOrOptions === undefined) return [undefined, tags]
+
+    const keys = Object.keys(metaOrOptions)
+    const isOptionsForm =
+      keys.length > 0 &&
+      keys.every(k => k === 'metadata' || k === 'tags') &&
+      tags === undefined &&
+      ('metadata' in metaOrOptions
+        ? metaOrOptions.metadata === undefined || metaOrOptions.metadata === null || (typeof metaOrOptions.metadata === 'object' && !Array.isArray(metaOrOptions.metadata))
+        : true) &&
+      ('tags' in metaOrOptions ? Array.isArray(metaOrOptions.tags) : true)
+
+    if (isOptionsForm) {
+      const opts = metaOrOptions as { metadata?: Record<string, unknown>; tags?: string[] }
+      return [opts.metadata ?? undefined, opts.tags]
+    }
+
+    return [metaOrOptions, tags]
   }
 
   // ─── Clean shutdown ───────────────────────────────────────────────────────────
